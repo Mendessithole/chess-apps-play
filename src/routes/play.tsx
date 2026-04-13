@@ -132,7 +132,7 @@ function PlayPage() {
 
     timerRef.current = setInterval(() => {
       if (game.turn() === "w") {
-        setWhiteTime(t => {
+        setWhiteTime((t: number) => {
           if (t <= 0) { setStatus("Black wins on time!"); return 0; }
           return t - 1;
         });
