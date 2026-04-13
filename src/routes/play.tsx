@@ -36,7 +36,7 @@ interface MoveInfo {
 function PlayPage() {
   const { speed, difficulty, color } = Route.useSearch();
   const playerColor = (color === "black" ? "black" : "white") as "white" | "black";
-  const speedConfig = SPEED_CONFIGS[speed];
+  const speedConfig = SPEED_CONFIGS[speed as GameSpeed];
 
   const [game, setGame] = useState(() => new Chess());
   const [whiteTime, setWhiteTime] = useState(speedConfig.initial);
