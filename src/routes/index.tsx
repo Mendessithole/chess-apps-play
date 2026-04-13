@@ -23,7 +23,6 @@ function HomePage() {
   const navigate = useNavigate();
   const [speed, setSpeed] = useState<GameSpeed>("blitz");
   const [difficulty, setDifficulty] = useState<AIDifficulty>("intermediate");
-  const [showAISetup, setShowAISetup] = useState(false);
 
   const startGame = (color: "white" | "black" | "random") => {
     const finalColor = color === "random" ? (Math.random() > 0.5 ? "white" : "black") : color;
@@ -76,14 +75,54 @@ function HomePage() {
           <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
             Play Modes
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <PlayModeCard
-              icon={<Bot className="w-6 h-6 text-primary" />}
-              title="Play vs AI"
-              description="Practice against bots with adjustable difficulty"
-              onClick={() => setShowAISetup(true)}
-              variant="featured"
-            />
+
+          {/* Play vs AI card */}
+          <PlayModeCard
+            icon={<Bot className="w-6 h-6 text-primary" />}
+            title="Play vs AI"
+            description="Practice against bots with adjustable difficulty"
+            onClick={() => {}}
+            variant="featured"
+          />
+
+          {/* AI Setup - always visible below Play vs AI */}
+          <div className="bg-surface border border-border rounded-xl p-5 mt-3 mb-4 space-y-4">
+            <div>
+              <h3 className="font-heading text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Difficulty</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {(Object.entries(AI_LEVELS) as [AIDifficulty, typeof AI_LEVELS[AIDifficulty]][]).map(([key, level]) => (
+                  <button
+                    key={key}
+                    onClick={() => setDifficulty(key)}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      difficulty === key
+                        ? "bg-primary/15 border-primary text-foreground"
+                        : "bg-background border-border text-muted-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    <p className="font-heading text-sm font-semibold">{level.label}</p>
+                    <p className="text-[11px] opacity-70">{level.elo}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-heading text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Play as</h3>
+              <div className="flex gap-2">
+                <Button onClick={() => startGame("white")} className="flex-1" variant="outline">♔ White</Button>
+                <Button onClick={() => startGame("random")} className="flex-1" variant="default">🎲 Random</Button>
+                <Button onClick={() => startGame("black")} className="flex-1" variant="outline">♚ Black</Button>
+              </div>
+            </div>
+
+            <Button onClick={() => startGame("random")} className="w-full" size="lg">
+              ⚔️ Start Game
+            </Button>
+          </div>
+
+          {/* Other modes */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <PlayModeCard
               icon={<Globe className="w-6 h-6 text-foreground" />}
               title="Online Match"
@@ -107,55 +146,6 @@ function HomePage() {
             />
           </div>
         </section>
-
-        {/* AI Setup Modal-like section */}
-        {showAISetup && (
-          <section className="max-w-lg mx-auto animate-slide-up">
-            <div className="bg-surface border border-border rounded-xl p-6 space-y-5">
-              <div className="flex items-center justify-between">
-                <h2 className="font-heading text-lg font-bold text-foreground">Play vs AI</h2>
-                <button onClick={() => setShowAISetup(false)} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
-              </div>
-
-              {/* Difficulty */}
-              <div>
-                <h3 className="font-heading text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Difficulty</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {(Object.entries(AI_LEVELS) as [AIDifficulty, typeof AI_LEVELS[AIDifficulty]][]).map(([key, level]) => (
-                    <button
-                      key={key}
-                      onClick={() => setDifficulty(key)}
-                      className={`text-left p-3 rounded-lg border transition-all ${
-                        difficulty === key
-                          ? "bg-primary/15 border-primary text-foreground"
-                          : "bg-background border-border text-muted-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      <p className="font-heading text-sm font-semibold">{level.label}</p>
-                      <p className="text-[11px] opacity-70">{level.elo}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Color Choice */}
-              <div>
-                <h3 className="font-heading text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Play as</h3>
-                <div className="flex gap-2">
-                  <Button onClick={() => startGame("white")} className="flex-1" variant="outline">
-                    ♔ White
-                  </Button>
-                  <Button onClick={() => startGame("random")} className="flex-1" variant="default">
-                    🎲 Random
-                  </Button>
-                  <Button onClick={() => startGame("black")} className="flex-1" variant="outline">
-                    ♚ Black
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* Rankings Preview */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
