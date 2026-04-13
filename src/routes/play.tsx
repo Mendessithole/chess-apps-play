@@ -36,7 +36,7 @@ interface MoveInfo {
 function PlayPage() {
   const { speed, difficulty, color } = Route.useSearch();
   const playerColor = (color === "black" ? "black" : "white") as "white" | "black";
-  const speedConfig = SPEED_CONFIGS[speed];
+  const speedConfig = SPEED_CONFIGS[speed as GameSpeed];
 
   const [game, setGame] = useState(() => new Chess());
   const [whiteTime, setWhiteTime] = useState(speedConfig.initial);
@@ -132,12 +132,12 @@ function PlayPage() {
 
     timerRef.current = setInterval(() => {
       if (game.turn() === "w") {
-        setWhiteTime(t => {
+        setWhiteTime((t: number) => {
           if (t <= 0) { setStatus("Black wins on time!"); return 0; }
           return t - 1;
         });
       } else {
-        setBlackTime(t => {
+        setBlackTime((t: number) => {
           if (t <= 0) { setStatus("White wins on time!"); return 0; }
           return t - 1;
         });
