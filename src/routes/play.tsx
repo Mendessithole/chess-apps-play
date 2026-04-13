@@ -137,7 +137,7 @@ function PlayPage() {
           return t - 1;
         });
       } else {
-        setBlackTime(t => {
+        setBlackTime((t: number) => {
           if (t <= 0) { setStatus("White wins on time!"); return 0; }
           return t - 1;
         });
