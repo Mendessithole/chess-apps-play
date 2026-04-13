@@ -23,7 +23,6 @@ function HomePage() {
   const navigate = useNavigate();
   const [speed, setSpeed] = useState<GameSpeed>("blitz");
   const [difficulty, setDifficulty] = useState<AIDifficulty>("intermediate");
-  const [showAISetup, setShowAISetup] = useState(false);
 
   const startGame = (color: "white" | "black" | "random") => {
     const finalColor = color === "random" ? (Math.random() > 0.5 ? "white" : "black") : color;
