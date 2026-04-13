@@ -35,13 +35,15 @@ export const Route = createRootRoute({
       { title: "Chess with AI — Play Chess Online" },
       { name: "description", content: "Play chess against AI with multiple difficulty levels and game modes." },
       { name: "author", content: "Chess with AI" },
-      { property: "og:title", content: "Chess with AI" },
+      { property: "og:title", content: "Chess with AI — Play Chess Online" },
       { property: "og:description", content: "Play chess against AI with multiple difficulty levels and game modes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "theme-color", content: "#0a0a1a" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "twitter:title", content: "Chess with AI — Play Chess Online" },
+      { name: "twitter:description", content: "Play chess against AI with multiple difficulty levels and game modes." },
     ],
     links: [
       {
