@@ -303,6 +303,23 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
                     opacity: 0.6,
                   }} />
                 )}
+
+                {/* Crazyhouse drop target hint */}
+                {isDropTarget && (
+                  <div className="absolute inset-1 pointer-events-none rounded-sm" style={{
+                    border: "2px dashed var(--primary)",
+                    opacity: 0.5,
+                  }} />
+                )}
+
+                {/* Fog of War overlay */}
+                {isHidden && (
+                  <div className="absolute inset-0 pointer-events-none" style={{
+                    background: "linear-gradient(135deg, oklch(0.12 0.04 270 / 0.92), oklch(0.18 0.06 270 / 0.92))",
+                    backgroundImage: "radial-gradient(circle at 30% 30%, oklch(0.25 0.05 270 / 0.4) 0%, transparent 50%)",
+                    zIndex: 20,
+                  }} />
+                )}
               </button>
             );
           })
