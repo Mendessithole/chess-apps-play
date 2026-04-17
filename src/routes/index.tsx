@@ -148,6 +148,39 @@ function HomePage() {
           </div>
         </section>
 
+        {/* Chess Variants */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.25s" }}>
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                Chess Variants
+              </h2>
+              <p className="text-xs text-muted-foreground/70 mt-1">Unique game modes — playable now</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(Object.values(VARIANTS).filter(v => v.id !== "standard")).map((v) => (
+              <button
+                key={v.id}
+                onClick={() => startGame("random", v.id)}
+                className="group relative flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-all duration-300 border border-border bg-surface hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-2 w-full">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">{v.emoji}</span>
+                  <div className="flex-1">
+                    <h3 className="font-heading font-semibold text-foreground text-sm">{v.name}</h3>
+                    <p className="text-[10px] text-primary uppercase tracking-wider font-semibold">{v.tagline}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{v.description}</p>
+                <span className="text-[10px] text-primary/80 font-heading font-semibold mt-1 group-hover:text-primary transition-colors">
+                  Play now →
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* Rankings Preview */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
           <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
