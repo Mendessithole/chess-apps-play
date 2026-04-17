@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PlayModeCard } from "@/components/chess/PlayModeCard";
 import { SpeedSelector } from "@/components/chess/SpeedSelector";
 import { type GameSpeed, type AIDifficulty, AI_LEVELS } from "@/lib/chess-engine";
+import { VARIANTS, type VariantId } from "@/lib/chess-variants";
 import { Bot, Globe, Trophy, Swords, Users, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -24,11 +25,11 @@ function HomePage() {
   const [speed, setSpeed] = useState<GameSpeed>("blitz");
   const [difficulty, setDifficulty] = useState<AIDifficulty>("intermediate");
 
-  const startGame = (color: "white" | "black" | "random") => {
+  const startGame = (color: "white" | "black" | "random", variant: VariantId = "standard") => {
     const finalColor = color === "random" ? (Math.random() > 0.5 ? "white" : "black") : color;
     navigate({
       to: "/play",
-      search: { speed, difficulty, color: finalColor },
+      search: { speed, difficulty, color: finalColor, variant },
     });
   };
 
