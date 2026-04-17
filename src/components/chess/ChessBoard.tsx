@@ -20,6 +20,14 @@ interface ChessBoardProps {
   playerColor?: "white" | "black";
   disabled?: boolean;
   lastMoveInfo?: MoveInfo | null;
+  /** Fog of War: set of squares visible to player. If undefined, all squares visible. */
+  visibleSquares?: Set<Square>;
+  /** King of the Hill: highlight center squares */
+  highlightSquares?: Square[];
+  /** Crazyhouse: piece selected for drop. When set, clicking empty squares triggers drop. */
+  dropMode?: { piece: string; color: "white" | "black" } | null;
+  /** Crazyhouse: callback for drop attempt */
+  onDrop?: (square: Square) => boolean;
 }
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
