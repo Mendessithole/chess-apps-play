@@ -20,6 +20,14 @@ interface ChessBoardProps {
   playerColor?: "white" | "black";
   disabled?: boolean;
   lastMoveInfo?: MoveInfo | null;
+  /** Fog of War: set of squares visible to player. If undefined, all squares visible. */
+  visibleSquares?: Set<Square>;
+  /** King of the Hill: highlight center squares */
+  highlightSquares?: Square[];
+  /** Crazyhouse: piece selected for drop. When set, clicking empty squares triggers drop. */
+  dropMode?: { piece: string; color: "white" | "black" } | null;
+  /** Crazyhouse: callback for drop attempt */
+  onDrop?: (square: Square) => boolean;
 }
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -34,7 +42,7 @@ function squareToGrid(square: Square, isFlipped: boolean): { row: number; col: n
   };
 }
 
-export function ChessBoard({ game, onMove, playerColor = "white", disabled = false, lastMoveInfo }: ChessBoardProps) {
+export function ChessBoard({ game, onMove, playerColor = "white", disabled = false, lastMoveInfo, visibleSquares, highlightSquares, dropMode, onDrop }: ChessBoardProps) {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
   const [animating, setAnimating] = useState<{
@@ -106,6 +114,15 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
   const handleSquareClick = useCallback((square: Square) => {
     if (disabled) return;
 
+    // Crazyhouse drop mode: clicking any empty square attempts a drop
+    if (dropMode && onDrop) {
+      const success = onDrop(square);
+      if (!success) playChessSound("illegal");
+      setSelectedSquare(null);
+      setLegalMoves([]);
+      return;
+    }
+
     if (selectedSquare) {
       if (legalMoves.includes(square)) {
         const piece = game.get(selectedSquare);
@@ -149,7 +166,7 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
       const moves = game.moves({ square, verbose: true });
       setLegalMoves(moves.map(m => m.to as Square));
     }
-  }, [selectedSquare, legalMoves, game, onMove, playerColor, disabled, isFlipped]);
+  }, [selectedSquare, legalMoves, game, onMove, playerColor, disabled, isFlipped, dropMode, onDrop]);
 
   const lastMove = useMemo(() => {
     const history = game.history({ verbose: true });
@@ -188,6 +205,9 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
             const isCheck = checkSquare === square;
             const isCapturedFading = capturedSquare === square;
             const isAnimSource = animating && rowIdx === animating.fromRow && colIdx === animating.fromCol;
+            const isHidden = visibleSquares !== undefined && !visibleSquares.has(square);
+            const isHill = highlightSquares?.includes(square);
+            const isDropTarget = !!dropMode && !piece;
 
             return (
               <button
@@ -203,6 +223,8 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
                     ? "oklch(0.55 0.30 25)"
                     : isSelected
                     ? "var(--board-selected)"
+                    : isHill
+                    ? sqColor === "light" ? "oklch(0.85 0.15 90)" : "oklch(0.55 0.20 90)"
                     : isLastMoveSquare
                     ? sqColor === "light" ? "oklch(0.78 0.10 100)" : "oklch(0.50 0.14 270)"
                     : sqColor === "light"
@@ -240,7 +262,7 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
                 )}
 
                 {/* Piece */}
-                {piece && !isAnimSource && (
+                {piece && !isAnimSource && !isHidden && (
                   <div
                     style={{
                       position: "relative",
@@ -279,6 +301,23 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
                   <div className="absolute inset-0 pointer-events-none" style={{
                     border: "3px solid var(--board-highlight)",
                     opacity: 0.6,
+                  }} />
+                )}
+
+                {/* Crazyhouse drop target hint */}
+                {isDropTarget && (
+                  <div className="absolute inset-1 pointer-events-none rounded-sm" style={{
+                    border: "2px dashed var(--primary)",
+                    opacity: 0.5,
+                  }} />
+                )}
+
+                {/* Fog of War overlay */}
+                {isHidden && (
+                  <div className="absolute inset-0 pointer-events-none" style={{
+                    background: "linear-gradient(135deg, oklch(0.12 0.04 270 / 0.92), oklch(0.18 0.06 270 / 0.92))",
+                    backgroundImage: "radial-gradient(circle at 30% 30%, oklch(0.25 0.05 270 / 0.4) 0%, transparent 50%)",
+                    zIndex: 20,
                   }} />
                 )}
               </button>
