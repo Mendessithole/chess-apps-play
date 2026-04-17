@@ -262,7 +262,7 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
                 )}
 
                 {/* Piece */}
-                {piece && !isAnimSource && (
+                {piece && !isAnimSource && !isHidden && (
                   <div
                     style={{
                       position: "relative",
