@@ -205,6 +205,9 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
             const isCheck = checkSquare === square;
             const isCapturedFading = capturedSquare === square;
             const isAnimSource = animating && rowIdx === animating.fromRow && colIdx === animating.fromCol;
+            const isHidden = visibleSquares !== undefined && !visibleSquares.has(square);
+            const isHill = highlightSquares?.includes(square);
+            const isDropTarget = !!dropMode && !piece;
 
             return (
               <button
