@@ -42,7 +42,7 @@ function squareToGrid(square: Square, isFlipped: boolean): { row: number; col: n
   };
 }
 
-export function ChessBoard({ game, onMove, playerColor = "white", disabled = false, lastMoveInfo }: ChessBoardProps) {
+export function ChessBoard({ game, onMove, playerColor = "white", disabled = false, lastMoveInfo, visibleSquares, highlightSquares, dropMode, onDrop }: ChessBoardProps) {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
   const [animating, setAnimating] = useState<{
@@ -114,6 +114,15 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
   const handleSquareClick = useCallback((square: Square) => {
     if (disabled) return;
 
+    // Crazyhouse drop mode: clicking any empty square attempts a drop
+    if (dropMode && onDrop) {
+      const success = onDrop(square);
+      if (!success) playChessSound("illegal");
+      setSelectedSquare(null);
+      setLegalMoves([]);
+      return;
+    }
+
     if (selectedSquare) {
       if (legalMoves.includes(square)) {
         const piece = game.get(selectedSquare);
@@ -157,7 +166,7 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
       const moves = game.moves({ square, verbose: true });
       setLegalMoves(moves.map(m => m.to as Square));
     }
-  }, [selectedSquare, legalMoves, game, onMove, playerColor, disabled, isFlipped]);
+  }, [selectedSquare, legalMoves, game, onMove, playerColor, disabled, isFlipped, dropMode, onDrop]);
 
   const lastMove = useMemo(() => {
     const history = game.history({ verbose: true });
