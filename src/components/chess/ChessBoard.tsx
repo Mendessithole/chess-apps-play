@@ -223,6 +223,8 @@ export function ChessBoard({ game, onMove, playerColor = "white", disabled = fal
                     ? "oklch(0.55 0.30 25)"
                     : isSelected
                     ? "var(--board-selected)"
+                    : isHill
+                    ? sqColor === "light" ? "oklch(0.85 0.15 90)" : "oklch(0.55 0.20 90)"
                     : isLastMoveSquare
                     ? sqColor === "light" ? "oklch(0.78 0.10 100)" : "oklch(0.50 0.14 270)"
                     : sqColor === "light"
