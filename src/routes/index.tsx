@@ -176,35 +176,97 @@ function HomePage() {
 
         {/* Chess Variants */}
         <section className="animate-slide-up" style={{ animationDelay: "0.25s" }}>
-          <div className="flex items-end justify-between mb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
             <div>
-              <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Chess Variants
+              <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <Flame className="w-4 h-4 text-primary" /> Chess Variants
               </h2>
-              <p className="text-xs text-muted-foreground/70 mt-1">Unique game modes — playable now</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">10 fully playable game modes — pick your battlefield</p>
+            </div>
+            <div className="flex flex-wrap gap-1.5 bg-surface border border-border rounded-lg p-1">
+              {tabKeys.map((key) => {
+                const label = key === "all" ? "All" : VARIANT_CATEGORIES[key as VariantCategory].label;
+                const active = variantTab === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setVariantTab(key)}
+                    className={`px-3 py-1.5 rounded-md text-[11px] font-heading font-semibold uppercase tracking-wider transition-all ${
+                      active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {(Object.values(VARIANTS).filter(v => v.id !== "standard")).map((v) => (
-              <button
-                key={v.id}
-                onClick={() => startGame("random", v.id)}
-                className="group relative flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-all duration-300 border border-border bg-surface hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-2 w-full">
-                  <span className="text-2xl group-hover:scale-110 transition-transform">{v.emoji}</span>
-                  <div className="flex-1">
-                    <h3 className="font-heading font-semibold text-foreground text-sm">{v.name}</h3>
-                    <p className="text-[10px] text-primary uppercase tracking-wider font-semibold">{v.tagline}</p>
+            {filteredVariants.map((v) => {
+              const catColor =
+                v.category === "tactical" ? "text-chart-2 bg-chart-2/10" :
+                v.category === "wild"     ? "text-destructive bg-destructive/10" :
+                v.category === "training" ? "text-gold bg-gold/10" :
+                                            "text-primary bg-primary/10";
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => startGame("random", v.id)}
+                  className="group relative flex flex-col gap-3 rounded-xl p-4 text-left transition-all duration-300 border border-border bg-surface hover:border-primary/60 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-0.5 overflow-hidden"
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+                  <div className="relative flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-background to-accent/40 border border-border flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                        {v.emoji}
+                      </div>
+                      <div>
+                        <h3 className="font-heading font-bold text-foreground text-[15px] leading-tight">{v.name}</h3>
+                        <p className="text-[10px] text-primary uppercase tracking-wider font-semibold mt-0.5">{v.tagline}</p>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] font-heading font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${catColor}`}>
+                      {VARIANT_CATEGORIES[v.category].label}
+                    </span>
                   </div>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{v.description}</p>
-                <span className="text-[10px] text-primary/80 font-heading font-semibold mt-1 group-hover:text-primary transition-colors">
-                  Play now →
-                </span>
-              </button>
-            ))}
+                  <p className="relative text-xs text-muted-foreground leading-relaxed line-clamp-2 min-h-[2.5em]">{v.description}</p>
+                  <div className="relative flex items-center justify-between pt-1 border-t border-border/50">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Skill</span>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3].map(i => (
+                          <span key={i} className={`w-1.5 h-1.5 rounded-full ${i <= v.difficulty ? "bg-primary" : "bg-border"}`} />
+                        ))}
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-primary font-heading font-bold group-hover:gap-2 transition-all">
+                      Play <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
+        </section>
+
+        {/* Daily Challenge */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.28s" }}>
+          <button
+            onClick={() => startGame("random", "puzzle")}
+            className="w-full group relative overflow-hidden rounded-xl border border-gold/30 bg-gradient-to-r from-surface via-surface to-gold/5 p-5 flex items-center gap-4 text-left hover:border-gold/60 transition-all"
+          >
+            <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-gold/10 blur-3xl group-hover:bg-gold/20 transition-all" />
+            <div className="relative w-12 h-12 rounded-lg bg-gold/15 border border-gold/30 flex items-center justify-center">
+              <Target className="w-6 h-6 text-gold" />
+            </div>
+            <div className="relative flex-1">
+              <p className="text-[10px] font-heading font-bold text-gold uppercase tracking-wider">Daily Challenge</p>
+              <h3 className="font-heading font-bold text-foreground text-base">Solve today's puzzle</h3>
+              <p className="text-xs text-muted-foreground">Sharpen your tactics — random puzzle, unlimited attempts</p>
+            </div>
+            <ArrowRight className="relative w-5 h-5 text-gold group-hover:translate-x-1 transition-transform" />
+          </button>
         </section>
 
         {/* Rankings Preview */}
@@ -214,23 +276,42 @@ function HomePage() {
           </h2>
           <div className="bg-surface border border-border rounded-xl overflow-hidden">
             {[
-              { rank: 1, name: "GrandMaster99", elo: 2450, wins: 342 },
-              { rank: 2, name: "TacticalGenius", elo: 2380, wins: 298 },
-              { rank: 3, name: "ChessWizard", elo: 2310, wins: 276 },
-              { rank: 4, name: "StrategyKing", elo: 2280, wins: 251 },
-              { rank: 5, name: "KnightRider", elo: 2240, wins: 223 },
-            ].map((player) => (
-              <div key={player.rank} className="flex items-center px-4 py-3 border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
-                <span className={`w-8 font-heading font-bold text-sm ${player.rank <= 3 ? "text-gold" : "text-muted-foreground"}`}>
-                  #{player.rank}
-                </span>
-                <span className="flex-1 font-medium text-sm text-foreground">{player.name}</span>
-                <span className="text-sm text-primary font-heading font-semibold w-16 text-right">{player.elo}</span>
-                <span className="text-xs text-muted-foreground w-20 text-right">{player.wins} wins</span>
-              </div>
-            ))}
+              { rank: 1, name: "GrandMaster99",  elo: 2450, wins: 342, country: "🇺🇸" },
+              { rank: 2, name: "TacticalGenius", elo: 2380, wins: 298, country: "🇮🇳" },
+              { rank: 3, name: "ChessWizard",    elo: 2310, wins: 276, country: "🇷🇺" },
+              { rank: 4, name: "StrategyKing",   elo: 2280, wins: 251, country: "🇩🇪" },
+              { rank: 5, name: "KnightRider",    elo: 2240, wins: 223, country: "🇧🇷" },
+            ].map((player) => {
+              const medal = player.rank === 1 ? "🥇" : player.rank === 2 ? "🥈" : player.rank === 3 ? "🥉" : null;
+              return (
+                <div key={player.rank} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
+                  <span className={`w-8 font-heading font-bold text-sm ${player.rank <= 3 ? "text-gold" : "text-muted-foreground"}`}>
+                    {medal ?? `#${player.rank}`}
+                  </span>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-border flex items-center justify-center text-xs font-heading font-bold text-foreground">
+                    {player.name.slice(0, 1)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium text-sm text-foreground truncate">{player.name}</span>
+                      <span className="text-sm">{player.country}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{player.wins} wins</span>
+                  </div>
+                  <span className="text-sm text-primary font-heading font-bold tabular-nums">{player.elo}</span>
+                </div>
+              );
+            })}
+            <div className="px-4 py-2.5 bg-background/50 text-center">
+              <span className="text-[11px] text-muted-foreground">Global rankings update daily</span>
+            </div>
           </div>
         </section>
+
+        {/* Footer */}
+        <footer className="text-center text-[11px] text-muted-foreground/60 pt-6 pb-2 border-t border-border">
+          <p>Chess with AI · Built for offline play · {new Date().getFullYear()}</p>
+        </footer>
       </main>
       </div>
     </div>
