@@ -302,10 +302,10 @@ function PlayPage() {
       captured: false, isCheck: newGame.isCheck(),
       isCastle: false, isPromotion: false, isGameOver: newGame.isGameOver(),
     });
-    const isOver = updateStatus(newGame);
+    const isOver = updateStatus(newGame, threeCheck);
     if (!isOver) makeAIMove(newGame);
     return true;
-  }, [selectedDrop, game, effectivePlayerColor, updateStatus, makeAIMove]);
+  }, [selectedDrop, game, effectivePlayerColor, updateStatus, makeAIMove, threeCheck]);
 
   // Timer
   useEffect(() => {
@@ -352,6 +352,7 @@ function PlayPage() {
     setLastMoveInfo(null);
     setPocket(emptyPocket());
     setSelectedDrop(null);
+    setThreeCheck(emptyThreeCheck());
     if (variant !== "puzzle" && effectivePlayerColor === "black") {
       setTimeout(() => makeAIMove(newGame), 500);
     }
@@ -375,6 +376,12 @@ function PlayPage() {
                 <p className="text-[10px] text-muted-foreground leading-tight">{variantInfo.tagline}</p>
               </div>
             </div>
+            {variant === "threecheck" && (
+              <div className="flex items-center gap-3 text-[11px] font-heading">
+                <span className="text-foreground/80">W <span className="text-primary font-bold">{threeCheck.whiteChecks}</span>/3</span>
+                <span className="text-foreground/80">B <span className="text-primary font-bold">{threeCheck.blackChecks}</span>/3</span>
+              </div>
+            )}
             <Link to="/" className="text-xs text-primary hover:underline">← Lobby</Link>
           </div>
 
