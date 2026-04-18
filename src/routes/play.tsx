@@ -14,6 +14,11 @@ import {
   getVisibleSquares,
   emptyPocket, addToPocket, removeFromPocket, dropPiece, type CrazyhousePocket,
   getRandomPuzzle, type ChessPuzzle,
+  applyAtomicExplosion, checkAtomicWinner,
+  emptyThreeCheck, updateThreeCheck, checkThreeCheckWinner, type ThreeCheckState,
+  generateHordeFen, checkHordeWinner,
+  getForcedCaptures, checkAntichessWinner,
+  generateRacingKingsFen, checkRacingKingsWinner,
 } from "@/lib/chess-variants";
 import { Lightbulb, RotateCw } from "lucide-react";
 
@@ -47,6 +52,8 @@ interface MoveInfo {
 
 function buildInitialGame(variant: VariantId, puzzle: ChessPuzzle | null): Chess {
   if (variant === "chess960") return new Chess(generateChess960Fen());
+  if (variant === "horde") return new Chess(generateHordeFen());
+  if (variant === "racingkings") return new Chess(generateRacingKingsFen());
   if (variant === "puzzle" && puzzle) return new Chess(puzzle.fen);
   return new Chess();
 }
@@ -74,6 +81,9 @@ function PlayPage() {
   const [pocket, setPocket] = useState<CrazyhousePocket>(() => emptyPocket());
   const [selectedDrop, setSelectedDrop] = useState<PieceSymbol | null>(null);
 
+  // Three-check state
+  const [threeCheck, setThreeCheck] = useState<ThreeCheckState>(() => emptyThreeCheck());
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Determine who plays which color in puzzle mode
@@ -92,23 +102,42 @@ function PlayPage() {
 
   const hillSquares = variant === "kingofthehill" ? getHillSquares() : undefined;
 
-  const updateStatus = useCallback((g: Chess) => {
-    // King of the Hill check
+  const updateStatus = useCallback((g: Chess, tcState?: ThreeCheckState) => {
     if (variant === "kingofthehill") {
       const hill = checkKingOfTheHill(g);
-      if (hill.winner) {
-        setStatus(`${hill.winner === "w" ? "White" : "Black"} reaches the hill — wins!`);
+      if (hill.winner) { setStatus(`${hill.winner === "w" ? "White" : "Black"} reaches the hill — wins!`); return true; }
+    }
+    if (variant === "atomic") {
+      const w = checkAtomicWinner(g);
+      if (w) { setStatus(`💥 ${w === "w" ? "White" : "Black"} wins — king destroyed!`); return true; }
+    }
+    if (variant === "threecheck" && tcState) {
+      const w = checkThreeCheckWinner(tcState);
+      if (w) { setStatus(`⚡ ${w === "w" ? "White" : "Black"} wins — three checks!`); return true; }
+    }
+    if (variant === "horde") {
+      const w = checkHordeWinner(g);
+      if (w) { setStatus(`${w === "w" ? "White" : "Black"} wins the horde!`); return true; }
+    }
+    if (variant === "antichess") {
+      const w = checkAntichessWinner(g);
+      if (w) { setStatus(`🙃 ${w === "w" ? "White" : "Black"} wins — lost it all!`); return true; }
+    }
+    if (variant === "racingkings") {
+      const w = checkRacingKingsWinner(g);
+      if (w) { setStatus(`🏁 ${w === "w" ? "White" : "Black"} king reaches rank 8 — wins!`); return true; }
+    }
+
+    if (variant !== "antichess" && variant !== "racingkings" && variant !== "atomic") {
+      if (g.isCheckmate()) {
+        const winner = g.turn() === "w" ? "Black" : "White";
+        setStatus(`Checkmate! ${winner} wins!`);
         return true;
       }
     }
-    if (g.isCheckmate()) {
-      const winner = g.turn() === "w" ? "Black" : "White";
-      setStatus(`Checkmate! ${winner} wins!`);
-      return true;
-    }
     if (g.isDraw()) { setStatus("Draw!"); return true; }
-    if (g.isStalemate()) { setStatus("Stalemate!"); return true; }
-    if (g.isCheck()) { setStatus("Check!"); return false; }
+    if (g.isStalemate() && variant !== "antichess") { setStatus("Stalemate!"); return true; }
+    if (g.isCheck() && variant !== "racingkings") { setStatus("Check!"); return false; }
     setStatus("");
     return false;
   }, [variant]);
@@ -130,26 +159,49 @@ function PlayPage() {
 
   const makeAIMove = useCallback((g: Chess) => {
     setTimeout(() => {
-      const aiMove = getAIMove(g, difficulty);
-      if (aiMove) {
-        const captured = aiMove.captured;
-        g.move(aiMove);
-        setMoveHistory(g.history());
-
-        // Crazyhouse: AI captured a piece — add to AI's pocket
-        if (variant === "crazyhouse" && captured) {
-          // AI is opposite of player
-          const aiColorChar = effectivePlayerColor === "white" ? "b" : "w";
-          setPocket(p => addToPocket(p, aiColorChar, captured as PieceSymbol));
+      // Antichess: AI must capture if possible
+      let aiMove = null;
+      if (variant === "antichess") {
+        const caps = getForcedCaptures(g);
+        if (caps.length > 0) {
+          const pick = caps[Math.floor(Math.random() * caps.length)];
+          try { aiMove = g.move({ from: pick.from, to: pick.to, promotion: "q" }); } catch { aiMove = null; }
         }
-
-        const newGame = new Chess(g.fen());
-        setGame(newGame);
-        setLastMoveInfo(buildMoveInfo(g));
-        updateStatus(g);
       }
+      if (!aiMove) {
+        const m = getAIMove(g, difficulty);
+        if (!m) return;
+        aiMove = g.move(m);
+      }
+
+      const captured = aiMove.captured;
+      const captureSq = aiMove.to as Square;
+
+      // Atomic: explode after capture
+      let postGame = new Chess(g.fen());
+      if (variant === "atomic" && captured) {
+        postGame = applyAtomicExplosion(postGame, captureSq);
+      }
+
+      // Crazyhouse: AI captured a piece — add to AI's pocket
+      if (variant === "crazyhouse" && captured) {
+        const aiColorChar = effectivePlayerColor === "white" ? "b" : "w";
+        setPocket(p => addToPocket(p, aiColorChar, captured as PieceSymbol));
+      }
+
+      // Three-check tracking
+      let nextTC = threeCheck;
+      if (variant === "threecheck") {
+        nextTC = updateThreeCheck(threeCheck, postGame);
+        setThreeCheck(nextTC);
+      }
+
+      setGame(postGame);
+      setMoveHistory(g.history());
+      setLastMoveInfo(buildMoveInfo(g));
+      updateStatus(postGame, nextTC);
     }, 300 + Math.random() * 700);
-  }, [difficulty, updateStatus, buildMoveInfo, variant, effectivePlayerColor]);
+  }, [difficulty, updateStatus, buildMoveInfo, variant, effectivePlayerColor, threeCheck]);
 
   // If player is black, AI moves first (standard, chess960, koth, fog, crazyhouse)
   useEffect(() => {
@@ -163,6 +215,20 @@ function PlayPage() {
 
   const handleMove = useCallback((from: Square, to: Square): boolean => {
     const gameCopy = new Chess(game.fen());
+
+    // Antichess: enforce forced capture
+    if (variant === "antichess") {
+      const caps = getForcedCaptures(gameCopy);
+      if (caps.length > 0) {
+        const isCap = caps.some(c => c.from === from && c.to === to);
+        if (!isCap) {
+          setStatus("⚠ You must capture!");
+          playChessSound("illegal");
+          return false;
+        }
+      }
+    }
+
     let moveResult;
     try {
       moveResult = gameCopy.move({ from, to, promotion: "q" });
@@ -170,10 +236,23 @@ function PlayPage() {
       return false;
     }
 
+    // Atomic: apply explosion if a capture occurred
+    let postGame = new Chess(gameCopy.fen());
+    if (variant === "atomic" && moveResult.captured) {
+      postGame = applyAtomicExplosion(postGame, to);
+    }
+
     // Crazyhouse: capture goes to player's pocket
     if (variant === "crazyhouse" && moveResult.captured) {
       const playerColorChar = effectivePlayerColor === "white" ? "w" : "b";
       setPocket(p => addToPocket(p, playerColorChar, moveResult.captured as PieceSymbol));
+    }
+
+    // Three-check tracking
+    let nextTC = threeCheck;
+    if (variant === "threecheck") {
+      nextTC = updateThreeCheck(threeCheck, postGame);
+      setThreeCheck(nextTC);
     }
 
     // Puzzle: validate against solution
@@ -194,17 +273,17 @@ function PlayPage() {
       }
     }
 
-    setGame(new Chess(gameCopy.fen()));
+    setGame(postGame);
     setMoveHistory(gameCopy.history());
     setGameStarted(true);
     setLastMoveInfo(buildMoveInfo(gameCopy));
 
-    const isOver = updateStatus(gameCopy);
+    const isOver = updateStatus(postGame, nextTC);
     if (!isOver && variant !== "puzzle") {
-      makeAIMove(gameCopy);
+      makeAIMove(postGame);
     }
     return true;
-  }, [game, updateStatus, makeAIMove, buildMoveInfo, variant, effectivePlayerColor, puzzle, puzzleStep]);
+  }, [game, updateStatus, makeAIMove, buildMoveInfo, variant, effectivePlayerColor, puzzle, puzzleStep, threeCheck]);
 
   // Crazyhouse drop handler
   const handleDrop = useCallback((square: Square): boolean => {
@@ -223,10 +302,10 @@ function PlayPage() {
       captured: false, isCheck: newGame.isCheck(),
       isCastle: false, isPromotion: false, isGameOver: newGame.isGameOver(),
     });
-    const isOver = updateStatus(newGame);
+    const isOver = updateStatus(newGame, threeCheck);
     if (!isOver) makeAIMove(newGame);
     return true;
-  }, [selectedDrop, game, effectivePlayerColor, updateStatus, makeAIMove]);
+  }, [selectedDrop, game, effectivePlayerColor, updateStatus, makeAIMove, threeCheck]);
 
   // Timer
   useEffect(() => {
@@ -273,6 +352,7 @@ function PlayPage() {
     setLastMoveInfo(null);
     setPocket(emptyPocket());
     setSelectedDrop(null);
+    setThreeCheck(emptyThreeCheck());
     if (variant !== "puzzle" && effectivePlayerColor === "black") {
       setTimeout(() => makeAIMove(newGame), 500);
     }
@@ -296,6 +376,12 @@ function PlayPage() {
                 <p className="text-[10px] text-muted-foreground leading-tight">{variantInfo.tagline}</p>
               </div>
             </div>
+            {variant === "threecheck" && (
+              <div className="flex items-center gap-3 text-[11px] font-heading">
+                <span className="text-foreground/80">W <span className="text-primary font-bold">{threeCheck.whiteChecks}</span>/3</span>
+                <span className="text-foreground/80">B <span className="text-primary font-bold">{threeCheck.blackChecks}</span>/3</span>
+              </div>
+            )}
             <Link to="/" className="text-xs text-primary hover:underline">← Lobby</Link>
           </div>
 

@@ -1,6 +1,19 @@
 import { Chess, type Square, type PieceSymbol, type Color } from "chess.js";
 
-export type VariantId = "standard" | "chess960" | "crazyhouse" | "kingofthehill" | "fogofwar" | "puzzle";
+export type VariantId =
+  | "standard"
+  | "chess960"
+  | "crazyhouse"
+  | "kingofthehill"
+  | "fogofwar"
+  | "puzzle"
+  | "atomic"
+  | "threecheck"
+  | "horde"
+  | "antichess"
+  | "racingkings";
+
+export type VariantCategory = "classic" | "tactical" | "wild" | "training";
 
 export interface VariantInfo {
   id: VariantId;
@@ -8,15 +21,29 @@ export interface VariantInfo {
   emoji: string;
   tagline: string;
   description: string;
+  category: VariantCategory;
+  difficulty: 1 | 2 | 3; // 1 easy, 2 medium, 3 hard to grasp
 }
 
 export const VARIANTS: Record<VariantId, VariantInfo> = {
-  standard: { id: "standard", name: "Standard", emoji: "♟️", tagline: "Classic chess", description: "The traditional rules of chess" },
-  chess960: { id: "chess960", name: "Chess960", emoji: "🎲", tagline: "Fischer Random", description: "Back rank pieces shuffled — 960 starting positions" },
-  crazyhouse: { id: "crazyhouse", name: "Crazyhouse", emoji: "🃏", tagline: "Captures return", description: "Captured pieces become yours to drop on the board" },
-  kingofthehill: { id: "kingofthehill", name: "King of the Hill", emoji: "👑", tagline: "Reach the center", description: "March your king to e4, d4, e5, or d5 to win" },
-  fogofwar: { id: "fogofwar", name: "Fog of War", emoji: "🌫️", tagline: "Hidden pieces", description: "You only see squares your pieces can reach" },
-  puzzle: { id: "puzzle", name: "Puzzle Battles", emoji: "🧩", tagline: "Solve to win", description: "Find the best move in tactical positions" },
+  standard:      { id: "standard",      name: "Standard",         emoji: "♟️", tagline: "Classic chess",     description: "The traditional rules of chess",                              category: "classic",  difficulty: 1 },
+  chess960:      { id: "chess960",      name: "Chess960",         emoji: "🎲", tagline: "Fischer Random",    description: "Back rank pieces shuffled — 960 starting positions",          category: "classic",  difficulty: 2 },
+  crazyhouse:    { id: "crazyhouse",    name: "Crazyhouse",       emoji: "🃏", tagline: "Captures return",   description: "Captured pieces become yours to drop on the board",           category: "wild",     difficulty: 2 },
+  kingofthehill: { id: "kingofthehill", name: "King of the Hill", emoji: "👑", tagline: "Reach the center",  description: "March your king to e4, d4, e5, or d5 to win",                 category: "tactical", difficulty: 1 },
+  fogofwar:      { id: "fogofwar",      name: "Fog of War",       emoji: "🌫️", tagline: "Hidden pieces",     description: "You only see squares your pieces can reach",                  category: "wild",     difficulty: 2 },
+  puzzle:        { id: "puzzle",        name: "Puzzle Battles",   emoji: "🧩", tagline: "Solve to win",      description: "Find the best move in tactical positions",                    category: "training", difficulty: 2 },
+  atomic:        { id: "atomic",        name: "Atomic",           emoji: "💥", tagline: "Captures explode",  description: "Captures detonate — surrounding pieces vanish. Blow up the king to win", category: "wild", difficulty: 3 },
+  threecheck:    { id: "threecheck",    name: "Three-Check",      emoji: "⚡", tagline: "Three checks wins", description: "Deliver three checks to your opponent's king to claim victory",  category: "tactical", difficulty: 1 },
+  horde:         { id: "horde",         name: "Horde",            emoji: "🐝", tagline: "36 pawns vs army",  description: "White commands a horde of 36 pawns. Black must capture them all",  category: "wild",   difficulty: 2 },
+  antichess:     { id: "antichess",     name: "Antichess",        emoji: "🙃", tagline: "Lose to win",       description: "Captures are forced. First to lose all pieces (or stalemate) wins", category: "wild",   difficulty: 3 },
+  racingkings:   { id: "racingkings",   name: "Racing Kings",     emoji: "🏁", tagline: "Race to rank 8",    description: "No checks allowed. First king to reach the eighth rank wins",      category: "tactical", difficulty: 2 },
+};
+
+export const VARIANT_CATEGORIES: Record<VariantCategory, { label: string; description: string }> = {
+  classic:  { label: "Classic",  description: "Traditional rules with familiar positions" },
+  tactical: { label: "Tactical", description: "Sharp objectives that reward calculation" },
+  wild:     { label: "Wild",     description: "Bold rule twists for adventurous players" },
+  training: { label: "Training", description: "Sharpen your skills with curated challenges" },
 };
 
 // ============= CHESS960 =============
@@ -310,4 +337,124 @@ export const PUZZLES: ChessPuzzle[] = [
 
 export function getRandomPuzzle(): ChessPuzzle {
   return PUZZLES[Math.floor(Math.random() * PUZZLES.length)];
+}
+
+// ============= ATOMIC =============
+const FILES_A = ["a", "b", "c", "d", "e", "f", "g", "h"];
+const RANKS_A = ["1", "2", "3", "4", "5", "6", "7", "8"];
+
+function neighbors(square: Square): Square[] {
+  const f = FILES_A.indexOf(square[0]);
+  const r = RANKS_A.indexOf(square[1]);
+  const out: Square[] = [];
+  for (let df = -1; df <= 1; df++) {
+    for (let dr = -1; dr <= 1; dr++) {
+      if (df === 0 && dr === 0) continue;
+      const nf = f + df, nr = r + dr;
+      if (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+        out.push(`${FILES_A[nf]}${RANKS_A[nr]}` as Square);
+      }
+    }
+  }
+  return out;
+}
+
+// Apply explosion to a chess.js board after a capture on `to`.
+// Removes the capturing piece and all non-pawn pieces on the 8 surrounding squares.
+export function applyAtomicExplosion(game: Chess, captureSquare: Square): Chess {
+  game.remove(captureSquare);
+  for (const sq of neighbors(captureSquare)) {
+    const p = game.get(sq);
+    if (p && p.type !== "p") game.remove(sq);
+  }
+  return new Chess(game.fen());
+}
+
+export function checkAtomicWinner(game: Chess): Color | null {
+  const board = game.board();
+  let whiteKing = false, blackKing = false;
+  for (const row of board) for (const sq of row) {
+    if (!sq) continue;
+    if (sq.type === "k" && sq.color === "w") whiteKing = true;
+    if (sq.type === "k" && sq.color === "b") blackKing = true;
+  }
+  if (!whiteKing) return "b";
+  if (!blackKing) return "w";
+  return null;
+}
+
+// ============= THREE-CHECK =============
+export interface ThreeCheckState {
+  whiteChecks: number;
+  blackChecks: number;
+}
+export function emptyThreeCheck(): ThreeCheckState {
+  return { whiteChecks: 0, blackChecks: 0 };
+}
+// Call after a move was made. The mover is the opposite of game.turn().
+export function updateThreeCheck(state: ThreeCheckState, game: Chess): ThreeCheckState {
+  if (!game.isCheck()) return state;
+  const mover = game.turn() === "w" ? "b" : "w";
+  return mover === "w"
+    ? { ...state, whiteChecks: state.whiteChecks + 1 }
+    : { ...state, blackChecks: state.blackChecks + 1 };
+}
+export function checkThreeCheckWinner(state: ThreeCheckState): Color | null {
+  if (state.whiteChecks >= 3) return "w";
+  if (state.blackChecks >= 3) return "b";
+  return null;
+}
+
+// ============= HORDE =============
+export function generateHordeFen(): string {
+  return "rnbqkbnr/pppppppp/8/1PP2PP1/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w kq - 0 1";
+}
+export function checkHordeWinner(game: Chess): Color | null {
+  let whitePieces = 0;
+  for (const row of game.board()) for (const sq of row) {
+    if (sq && sq.color === "w") whitePieces++;
+  }
+  if (whitePieces === 0) return "b";
+  if (game.isCheckmate()) return game.turn() === "w" ? "b" : "w";
+  return null;
+}
+
+// ============= ANTICHESS =============
+export function getForcedCaptures(game: Chess): { from: Square; to: Square }[] {
+  const moves = game.moves({ verbose: true });
+  return moves.filter(m => m.captured).map(m => ({ from: m.from as Square, to: m.to as Square }));
+}
+export function checkAntichessWinner(game: Chess): Color | null {
+  const board = game.board();
+  let whiteCount = 0, blackCount = 0;
+  for (const row of board) for (const sq of row) {
+    if (!sq) continue;
+    if (sq.color === "w") whiteCount++; else blackCount++;
+  }
+  if (whiteCount === 0) return "w";
+  if (blackCount === 0) return "b";
+  if (game.moves().length === 0) return game.turn();
+  return null;
+}
+
+// ============= RACING KINGS =============
+export function generateRacingKingsFen(): string {
+  return "8/8/8/8/8/8/krbnNBRK/qrbnNBRQ w - - 0 1";
+}
+export function checkRacingKingsWinner(game: Chess): Color | null {
+  const board = game.board();
+  let whiteKingRank = -1, blackKingRank = -1;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const sq = board[r]?.[c];
+      if (sq && sq.type === "k") {
+        const rank = 8 - r;
+        if (sq.color === "w") whiteKingRank = rank;
+        else blackKingRank = rank;
+      }
+    }
+  }
+  if (whiteKingRank === 8) return "w";
+  if (blackKingRank === 8) return "b";
+  return null;
 }
