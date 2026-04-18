@@ -14,6 +14,11 @@ import {
   getVisibleSquares,
   emptyPocket, addToPocket, removeFromPocket, dropPiece, type CrazyhousePocket,
   getRandomPuzzle, type ChessPuzzle,
+  applyAtomicExplosion, checkAtomicWinner,
+  emptyThreeCheck, updateThreeCheck, checkThreeCheckWinner, type ThreeCheckState,
+  generateHordeFen, checkHordeWinner,
+  getForcedCaptures, checkAntichessWinner,
+  generateRacingKingsFen, checkRacingKingsWinner,
 } from "@/lib/chess-variants";
 import { Lightbulb, RotateCw } from "lucide-react";
 
@@ -47,6 +52,8 @@ interface MoveInfo {
 
 function buildInitialGame(variant: VariantId, puzzle: ChessPuzzle | null): Chess {
   if (variant === "chess960") return new Chess(generateChess960Fen());
+  if (variant === "horde") return new Chess(generateHordeFen());
+  if (variant === "racingkings") return new Chess(generateRacingKingsFen());
   if (variant === "puzzle" && puzzle) return new Chess(puzzle.fen);
   return new Chess();
 }
@@ -73,6 +80,9 @@ function PlayPage() {
   // Crazyhouse state
   const [pocket, setPocket] = useState<CrazyhousePocket>(() => emptyPocket());
   const [selectedDrop, setSelectedDrop] = useState<PieceSymbol | null>(null);
+
+  // Three-check state
+  const [threeCheck, setThreeCheck] = useState<ThreeCheckState>(() => emptyThreeCheck());
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
