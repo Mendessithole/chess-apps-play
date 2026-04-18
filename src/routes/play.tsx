@@ -102,23 +102,42 @@ function PlayPage() {
 
   const hillSquares = variant === "kingofthehill" ? getHillSquares() : undefined;
 
-  const updateStatus = useCallback((g: Chess) => {
-    // King of the Hill check
+  const updateStatus = useCallback((g: Chess, tcState?: ThreeCheckState) => {
     if (variant === "kingofthehill") {
       const hill = checkKingOfTheHill(g);
-      if (hill.winner) {
-        setStatus(`${hill.winner === "w" ? "White" : "Black"} reaches the hill — wins!`);
+      if (hill.winner) { setStatus(`${hill.winner === "w" ? "White" : "Black"} reaches the hill — wins!`); return true; }
+    }
+    if (variant === "atomic") {
+      const w = checkAtomicWinner(g);
+      if (w) { setStatus(`💥 ${w === "w" ? "White" : "Black"} wins — king destroyed!`); return true; }
+    }
+    if (variant === "threecheck" && tcState) {
+      const w = checkThreeCheckWinner(tcState);
+      if (w) { setStatus(`⚡ ${w === "w" ? "White" : "Black"} wins — three checks!`); return true; }
+    }
+    if (variant === "horde") {
+      const w = checkHordeWinner(g);
+      if (w) { setStatus(`${w === "w" ? "White" : "Black"} wins the horde!`); return true; }
+    }
+    if (variant === "antichess") {
+      const w = checkAntichessWinner(g);
+      if (w) { setStatus(`🙃 ${w === "w" ? "White" : "Black"} wins — lost it all!`); return true; }
+    }
+    if (variant === "racingkings") {
+      const w = checkRacingKingsWinner(g);
+      if (w) { setStatus(`🏁 ${w === "w" ? "White" : "Black"} king reaches rank 8 — wins!`); return true; }
+    }
+
+    if (variant !== "antichess" && variant !== "racingkings" && variant !== "atomic") {
+      if (g.isCheckmate()) {
+        const winner = g.turn() === "w" ? "Black" : "White";
+        setStatus(`Checkmate! ${winner} wins!`);
         return true;
       }
     }
-    if (g.isCheckmate()) {
-      const winner = g.turn() === "w" ? "Black" : "White";
-      setStatus(`Checkmate! ${winner} wins!`);
-      return true;
-    }
     if (g.isDraw()) { setStatus("Draw!"); return true; }
-    if (g.isStalemate()) { setStatus("Stalemate!"); return true; }
-    if (g.isCheck()) { setStatus("Check!"); return false; }
+    if (g.isStalemate() && variant !== "antichess") { setStatus("Stalemate!"); return true; }
+    if (g.isCheck() && variant !== "racingkings") { setStatus("Check!"); return false; }
     setStatus("");
     return false;
   }, [variant]);
