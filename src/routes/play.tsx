@@ -215,6 +215,20 @@ function PlayPage() {
 
   const handleMove = useCallback((from: Square, to: Square): boolean => {
     const gameCopy = new Chess(game.fen());
+
+    // Antichess: enforce forced capture
+    if (variant === "antichess") {
+      const caps = getForcedCaptures(gameCopy);
+      if (caps.length > 0) {
+        const isCap = caps.some(c => c.from === from && c.to === to);
+        if (!isCap) {
+          setStatus("⚠ You must capture!");
+          playChessSound("illegal");
+          return false;
+        }
+      }
+    }
+
     let moveResult;
     try {
       moveResult = gameCopy.move({ from, to, promotion: "q" });
@@ -222,10 +236,23 @@ function PlayPage() {
       return false;
     }
 
+    // Atomic: apply explosion if a capture occurred
+    let postGame = new Chess(gameCopy.fen());
+    if (variant === "atomic" && moveResult.captured) {
+      postGame = applyAtomicExplosion(postGame, to);
+    }
+
     // Crazyhouse: capture goes to player's pocket
     if (variant === "crazyhouse" && moveResult.captured) {
       const playerColorChar = effectivePlayerColor === "white" ? "w" : "b";
       setPocket(p => addToPocket(p, playerColorChar, moveResult.captured as PieceSymbol));
+    }
+
+    // Three-check tracking
+    let nextTC = threeCheck;
+    if (variant === "threecheck") {
+      nextTC = updateThreeCheck(threeCheck, postGame);
+      setThreeCheck(nextTC);
     }
 
     // Puzzle: validate against solution
@@ -246,17 +273,17 @@ function PlayPage() {
       }
     }
 
-    setGame(new Chess(gameCopy.fen()));
+    setGame(postGame);
     setMoveHistory(gameCopy.history());
     setGameStarted(true);
     setLastMoveInfo(buildMoveInfo(gameCopy));
 
-    const isOver = updateStatus(gameCopy);
+    const isOver = updateStatus(postGame, nextTC);
     if (!isOver && variant !== "puzzle") {
-      makeAIMove(gameCopy);
+      makeAIMove(postGame);
     }
     return true;
-  }, [game, updateStatus, makeAIMove, buildMoveInfo, variant, effectivePlayerColor, puzzle, puzzleStep]);
+  }, [game, updateStatus, makeAIMove, buildMoveInfo, variant, effectivePlayerColor, puzzle, puzzleStep, threeCheck]);
 
   // Crazyhouse drop handler
   const handleDrop = useCallback((square: Square): boolean => {
