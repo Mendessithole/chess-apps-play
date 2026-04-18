@@ -159,26 +159,49 @@ function PlayPage() {
 
   const makeAIMove = useCallback((g: Chess) => {
     setTimeout(() => {
-      const aiMove = getAIMove(g, difficulty);
-      if (aiMove) {
-        const captured = aiMove.captured;
-        g.move(aiMove);
-        setMoveHistory(g.history());
-
-        // Crazyhouse: AI captured a piece — add to AI's pocket
-        if (variant === "crazyhouse" && captured) {
-          // AI is opposite of player
-          const aiColorChar = effectivePlayerColor === "white" ? "b" : "w";
-          setPocket(p => addToPocket(p, aiColorChar, captured as PieceSymbol));
+      // Antichess: AI must capture if possible
+      let aiMove = null;
+      if (variant === "antichess") {
+        const caps = getForcedCaptures(g);
+        if (caps.length > 0) {
+          const pick = caps[Math.floor(Math.random() * caps.length)];
+          try { aiMove = g.move({ from: pick.from, to: pick.to, promotion: "q" }); } catch { aiMove = null; }
         }
-
-        const newGame = new Chess(g.fen());
-        setGame(newGame);
-        setLastMoveInfo(buildMoveInfo(g));
-        updateStatus(g);
       }
+      if (!aiMove) {
+        const m = getAIMove(g, difficulty);
+        if (!m) return;
+        aiMove = g.move(m);
+      }
+
+      const captured = aiMove.captured;
+      const captureSq = aiMove.to as Square;
+
+      // Atomic: explode after capture
+      let postGame = new Chess(g.fen());
+      if (variant === "atomic" && captured) {
+        postGame = applyAtomicExplosion(postGame, captureSq);
+      }
+
+      // Crazyhouse: AI captured a piece — add to AI's pocket
+      if (variant === "crazyhouse" && captured) {
+        const aiColorChar = effectivePlayerColor === "white" ? "b" : "w";
+        setPocket(p => addToPocket(p, aiColorChar, captured as PieceSymbol));
+      }
+
+      // Three-check tracking
+      let nextTC = threeCheck;
+      if (variant === "threecheck") {
+        nextTC = updateThreeCheck(threeCheck, postGame);
+        setThreeCheck(nextTC);
+      }
+
+      setGame(postGame);
+      setMoveHistory(g.history());
+      setLastMoveInfo(buildMoveInfo(g));
+      updateStatus(postGame, nextTC);
     }, 300 + Math.random() * 700);
-  }, [difficulty, updateStatus, buildMoveInfo, variant, effectivePlayerColor]);
+  }, [difficulty, updateStatus, buildMoveInfo, variant, effectivePlayerColor, threeCheck]);
 
   // If player is black, AI moves first (standard, chess960, koth, fog, crazyhouse)
   useEffect(() => {
