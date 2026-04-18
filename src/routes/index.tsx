@@ -24,6 +24,7 @@ function HomePage() {
   const navigate = useNavigate();
   const [speed, setSpeed] = useState<GameSpeed>("blitz");
   const [difficulty, setDifficulty] = useState<AIDifficulty>("intermediate");
+  const [variantTab, setVariantTab] = useState<VariantCategory | "all">("all");
 
   const startGame = (color: "white" | "black" | "random", variant: VariantId = "standard") => {
     const finalColor = color === "random" ? (Math.random() > 0.5 ? "white" : "black") : color;
@@ -32,6 +33,12 @@ function HomePage() {
       search: { speed, difficulty, color: finalColor, variant },
     });
   };
+
+  const allVariants = Object.values(VARIANTS).filter(v => v.id !== "standard");
+  const filteredVariants = variantTab === "all"
+    ? allVariants
+    : allVariants.filter(v => v.category === variantTab);
+  const tabKeys: (VariantCategory | "all")[] = ["all", "tactical", "wild", "training", "classic"];
 
   return (
     <div className="min-h-screen bg-background relative">
