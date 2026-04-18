@@ -59,15 +59,34 @@ function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-10">
         {/* Hero */}
-        <section className="text-center space-y-3 animate-slide-up">
-          <h1 className="font-heading text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
-            <span className="text-primary">Chess</span> with AI
+        <section className="text-center space-y-4 animate-slide-up">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[11px] font-heading font-semibold text-primary uppercase tracking-wider">
+            <Sparkles className="w-3 h-3" /> 11 Game Modes · Play Offline
+          </div>
+          <h1 className="font-heading text-4xl sm:text-6xl font-bold text-foreground tracking-tight">
+            <span className="bg-gradient-to-r from-primary via-primary/80 to-gold bg-clip-text text-transparent">Chess</span> with AI
           </h1>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Challenge AI bots, compete online, and climb the ranks
+          <p className="text-muted-foreground max-w-lg mx-auto text-sm sm:text-base">
+            Challenge AI bots, master variants, solve puzzles, and climb the global ranks
           </p>
+          <div className="flex items-center justify-center gap-6 sm:gap-10 pt-2 text-xs">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="font-heading text-xl font-bold text-foreground">11</span>
+              <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Variants</span>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="font-heading text-xl font-bold text-foreground">4</span>
+              <span className="text-muted-foreground uppercase tracking-wider text-[10px]">AI Levels</span>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="font-heading text-xl font-bold text-foreground">∞</span>
+              <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Games</span>
+            </div>
+          </div>
         </section>
 
         {/* Speed Selector */}
