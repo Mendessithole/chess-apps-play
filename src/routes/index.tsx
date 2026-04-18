@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { PlayModeCard } from "@/components/chess/PlayModeCard";
 import { SpeedSelector } from "@/components/chess/SpeedSelector";
 import { type GameSpeed, type AIDifficulty, AI_LEVELS } from "@/lib/chess-engine";
-import { VARIANTS, type VariantId } from "@/lib/chess-variants";
-import { Bot, Globe, Trophy, Swords, Users, Crown } from "lucide-react";
+import { VARIANTS, VARIANT_CATEGORIES, type VariantId, type VariantCategory } from "@/lib/chess-variants";
+import { Bot, Globe, Trophy, Swords, Users, Crown, Sparkles, Target, Flame, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
